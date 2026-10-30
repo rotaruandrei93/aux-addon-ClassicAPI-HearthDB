@@ -10,6 +10,7 @@ All notable changes to this fork are documented here.
 - Without HearthDB nothing changes (SavedVariables as before). If a database write fails, data falls back to SavedVariables.
 
 ### Fixes
+- pfui theme: item icons in the Post tab (inventory list and item slot) could be invisible. The icon border is now drawn on its own frame instead of through pfUI's HandleIcon.
 - Auctions / Bids tab no longer stays on "loading" when you have many auctions: owner/bidder page requests now time out, are retried (2s/4s back-off) and finally abort with a "click Refresh" message.
 - Servers that send the whole owner list at once are handled: all auctions are read (previously only the first 50) with no duplicate page requests.
 

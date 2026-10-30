@@ -31,6 +31,7 @@ function M:render()
 				row.highlight:Hide()
 			end
 			row.item.texture:SetTexture(item_record.texture)
+			row.item.texture:Show()
 			row.item.name:SetText('[' .. item_record.name .. ']')
 			local color = ITEM_QUALITY_COLORS[item_record.quality]
 			row.item.name:SetTextColor(color.r, color.g, color.b)

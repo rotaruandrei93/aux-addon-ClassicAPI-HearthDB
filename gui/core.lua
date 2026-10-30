@@ -450,39 +450,28 @@ function M.button(parent, text_height)
     return button
 end
 
--- Button with a solid triangle arrow ('left' or 'right') built from 1px rows, so it can be tinted like button text.
--- If drawing the triangle fails for any reason it falls back to a plain '<' / '>' text button.
+-- Button with a smooth anti-aliased arrow ('left' or 'right') from textures/arrow_<direction>.tga, tinted like button text.
+-- If setup fails it falls back to a plain '<' / '>' text button.
 function M.arrow_button(parent, direction)
     local btn = button(parent)
-    local rows = 11
-    local textures = {}
+    local tex
     local function tint(enabled)
-        local r, g, b = 1, .82, 0
-        if not enabled then r, g, b = .5, .5, .5 end
-        for k = 1, getn(textures) do textures[k]:SetVertexColor(r, g, b) end
+        if not tex then return end
+        if enabled then
+            tex:SetVertexColor(1, .82, 0)
+        else
+            tex:SetVertexColor(.5, .5, .5)
+        end
     end
     local function build()
         local holder = CreateFrame('Frame', nil, btn)
         holder:SetFrameLevel(btn:GetFrameLevel() + 2)
-        holder:SetWidth(6)
-        holder:SetHeight(rows)
-        local offset = 1
-        if direction == 'left' then offset = -1 end
-        holder:SetPoint('CENTER', btn, 'CENTER', offset, 0)
-        for k = 1, rows do
-            local w = k
-            if rows + 1 - k < w then w = rows + 1 - k end
-            local tex = holder:CreateTexture(nil, 'OVERLAY')
-            tex:SetTexture(1, 1, 1, 1)
-            tex:SetWidth(w)
-            tex:SetHeight(1)
-            if direction == 'left' then
-                tex:SetPoint('TOPLEFT', holder, 'TOPLEFT', 0, 1 - k)
-            else
-                tex:SetPoint('TOPRIGHT', holder, 'TOPRIGHT', 0, 1 - k)
-            end
-            tinsert(textures, tex)
-        end
+        holder:SetWidth(16)
+        holder:SetHeight(16)
+        holder:SetPoint('CENTER', btn, 'CENTER', 0, 0)
+        tex = holder:CreateTexture(nil, 'OVERLAY')
+        tex:SetAllPoints(holder)
+        tex:SetTexture([[Interface\AddOns\aux-addon\textures\arrow_]] .. direction)
         tint(true)
     end
     if pcall(build) then
@@ -928,8 +917,22 @@ function M.item(parent)
     if pfui_native() then
         btn:SetNormalTexture(nil)
         btn:SetPushedTexture(nil)
-        pf_call('CreateBackdrop', btn, nil, true)
-        pf_call('HandleIcon', btn, item.texture)
+        -- Don't use pfUI's HandleIcon: it re-parents/re-anchors the icon texture and on some pfUI versions the
+        -- icon ends up hidden behind the backdrop. Draw the border on a separate frame below the button instead.
+        local border = CreateFrame('Frame', nil, btn)
+        border:SetFrameLevel(max(btn:GetFrameLevel() - 1, 0))
+        border:SetAllPoints(btn)
+        if not pf_call('CreateBackdrop', border, nil, true) then
+            border:SetBackdrop{bgFile=[[Interface\Buttons\WHITE8X8]], edgeFile=[[Interface\Buttons\WHITE8X8]], edgeSize=1}
+            border:SetBackdropColor(0, 0, 0, 1)
+            border:SetBackdropBorderColor(.3, .3, .3, 1)
+        end
+        item.texture:SetTexCoord(.08, .92, .08, .92)
+        item.texture:SetDrawLayer('ARTWORK')
+        item.texture:ClearAllPoints()
+        item.texture:SetPoint('TOPLEFT', btn, 'TOPLEFT', 1, -1)
+        item.texture:SetPoint('BOTTOMRIGHT', btn, 'BOTTOMRIGHT', -1, 1)
+        item.texture:Show()
     end
     item.name = label(btn, font_size.medium)
     item.name:SetJustifyH('LEFT')
